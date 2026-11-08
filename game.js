@@ -572,15 +572,17 @@
   applyLang(); setMuteIco()
   requestAnimationFrame(loop)
   let got = 0
-  const total = ALL_SND.length + 1
+  const LATE = ['snd/amb.mp3', 'snd/hum.mp3', 'snd/drumroll.mp3'] // 大きい環境音は準備完了を待たず裏で読む（ループは届くまで待って鳴る）
+  const FIRST = ALL_SND.filter(u => !LATE.includes(u))
+  const total = FIRST.length + 1
   const tickBar = () => { got++; $('#loadBar i').style.width = (got / total * 100) + '%' }
   const fontP = Promise.race([Promise.all(['16px "DotGothic16"', '20px "Zen Antique"', '16px "Yomogi"'].map(f => document.fonts.load(f, '相性診断マシンこわれてますカイセキ'))), new Promise(ok => setTimeout(ok, 4000))]).catch(() => {}).then(tickBar)
-  const sndP = ALL_SND.map(u => fetch(u).then(r => r.arrayBuffer()).catch(() => {}).then(tickBar))
+  const sndP = FIRST.map(u => fetch(u).then(r => r.arrayBuffer()).catch(() => {}).then(tickBar))
   const done = () => {
     if (window.__aishoReady) return
     window.__aishoReady = true
     tickText = ''; const l = $('#loading'); l.style.opacity = 0; setTimeout(() => { l.style.display = 'none' }, 380)
   }
-  Promise.all([fontP, ...sndP]).then(done)
+  Promise.all([fontP, ...sndP]).then(() => { done(); LATE.forEach(u => fetch(u).catch(() => {})) })
   setTimeout(done, 12000)
 })()
