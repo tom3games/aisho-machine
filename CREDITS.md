@@ -1,0 +1,33 @@
+- snd/hum.mp3: 100 CC0 SFX #2 / rubberduck / CC0
+- snd/amb.mp3: 上の41〜65秒（静かな通り・車が1台通る）を1.5秒の重ね合わせで継ぎ目なしのループにしたもの（22.5秒・16kHz・WAV） / cori / Public domain
+- snd/whir1.mp3: 100 CC0 SFX / rubberduck / CC0
+- snd/whir2.mp3: 100 CC0 SFX / rubberduck / CC0
+- snd/whir3.mp3: 100 CC0 SFX / rubberduck / CC0
+- snd/smack1.mp3: 100 CC0 SFX #2 / rubberduck / CC0
+- snd/smack2.mp3: 100 CC0 SFX / rubberduck / CC0
+- snd/smack3.mp3: 100 CC0 SFX / rubberduck / CC0
+- snd/lever1.mp3: 100 CC0 SFX #2 / rubberduck / CC0
+- snd/lever2.mp3: 50 RPG sound effects / Kenney / CC0
+- snd/boing1.mp3: 100 CC0 SFX / rubberduck / CC0
+- snd/boing2.mp3: 100 CC0 SFX / rubberduck / CC0
+- snd/fan1.mp3: Swishes Sound Pack / artisticdude / CC0
+- snd/fan2.mp3: Swishes Sound Pack / artisticdude / CC0
+- snd/fan3.mp3: Swishes Sound Pack / artisticdude / CC0
+- snd/steam.mp3: 100 CC0 SFX #2 / rubberduck / CC0
+- snd/plug1.mp3: 50 RPG sound effects / Kenney / CC0
+- snd/plug2.mp3: 100 CC0 SFX / rubberduck / CC0
+- snd/ding.mp3: 100 CC0 SFX / rubberduck / CC0
+- snd/register.mp3: File:Cash register.ogg / Me / Public domain
+- snd/paper1.mp3: 100 CC0 SFX / rubberduck / CC0
+- snd/paper2.mp3: 100 CC0 SFX / rubberduck / CC0
+- snd/drumroll.mp3: File:Drum Roll Intro.ogg / Iwan Sounds and DIY / CC0
+- snd/coin.mp3: Coin Drop / Vinrax / CC0
+- snd/jgood.mp3: 85 Short music jingles / Kenney / CC0
+- snd/jbad.mp3: 85 Short music jingles / Kenney / CC0
+- snd/weird1.mp3: 30 weird CC0 SFX / rubberduck / CC0
+- snd/weird2.mp3: 30 weird CC0 SFX / rubberduck / CC0
+- snd/fall1.mp3: 75 CC0 breaking / falling / hit sfx / rubberduck / CC0
+- snd/glass.mp3: 75 CC0 breaking / falling / hit sfx / rubberduck / CC0
+- snd/clank.mp3: 75 CC0 breaking / falling / hit sfx / rubberduck / CC0
+- snd/static.mp3: File:Static B.wav / Oreocooke / CC0
+- snd/spark1〜3.mp3: snd/static.mp3 を 0.1〜0.3秒に切ったもの（File:Static B.wav / Oreocooke / CC0）

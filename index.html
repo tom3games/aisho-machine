@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>相性診断マシン（壊れてる）名前で恋愛・友達の相性診断</title>
+<meta name="description" content="二人の名前を入れると、壊れかけの相性診断マシンが動き出す。叩いて、あおいで、レバーを引いて延命する無料の相性診断ゲーム。カップル・友達・推しとの相性も。名前は端末の外に送りません。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="相性診断マシン（壊れてる）">
+<meta property="og:description" content="名前を入れると壊れかけの機械が相性を測る。煙が出たらあおぐ、針が止まったら叩く。結果は「相性120%（測定不能）」かもしれない。">
+<meta property="og:image" content="https://tom3games.github.io/aisho-machine/og.png">
+<meta property="og:url" content="https://tom3games.github.io/aisho-machine/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1f2a26">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Antique&family=Yomogi&display=swap" rel="stylesheet">
+<style>
+[hidden]{display:none!important}
+:root{--enamel:#e6dbc0;--ink:#2b2219;--amber:#ffb02e;--red:#a3301f;--brass:#b8913f;--dot:"DotGothic16",ui-monospace,monospace;--plate:"Zen Antique","Hiragino Mincho ProN",serif;--hand:"Yomogi","Hiragino Maru Gothic ProN",sans-serif;--sans:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%;background:#1f2a26}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;font-family:var(--sans);color:#f1e6cc;overflow:hidden;height:100svh;
+ background:
+  radial-gradient(ellipse 60% 38% at 50% 0%,rgba(255,196,110,.30),transparent 70%),
+  linear-gradient(transparent 84%,#2a1f17 84%,#1b140f 100%),
+  repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 2px,transparent 2px 34px),
+  repeating-linear-gradient(90deg,rgba(0,0,0,.22) 0 2px,transparent 2px 34px),
+  #3b5249}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+input{font:inherit;-webkit-user-select:text;user-select:text}
+#bulb{position:fixed;left:50%;top:0;width:2px;height:22px;background:#111;transform:translateX(-50%);z-index:1}
+#bulb::after{content:"";position:absolute;left:-7px;top:20px;width:16px;height:20px;border-radius:50% 50% 45% 45%;background:radial-gradient(circle at 50% 40%,#fff6d8,#ffc46e 60%,#c57a2a);box-shadow:0 0 26px 8px rgba(255,190,100,.45)}
+
+/* ロード画面: 真空管があたたまる */
+#loading{position:fixed;inset:0;z-index:90;background:#141a17;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .35s}
+#loading svg{width:70px;height:120px}
+#loading p{font-family:var(--dot);font-size:16px;color:var(--amber);letter-spacing:.12em}
+#loadBar{width:150px;height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}
+#loadBar i{display:block;height:100%;width:0;background:var(--amber);transition:width .2s}
+#fil{animation:fil 1.3s ease-in-out infinite alternate}
+@keyframes fil{0%{opacity:.35}100%{opacity:1}}
+
+#corner{position:fixed;top:max(6px,env(safe-area-inset-top));right:6px;z-index:60;display:flex;gap:6px}
+#corner button{min-width:40px;height:40px;border-radius:20px;background:rgba(15,20,18,.6);color:#f1e6cc;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 10px}
+#corner svg{width:20px;height:20px;fill:#f1e6cc}
+
+/* 機械の舞台。タイトルでは上半分、遊びでは全面 */
+#stage{position:fixed;left:0;right:0;top:calc(44px + env(safe-area-inset-top));bottom:calc(40svh);z-index:5;transition:bottom .5s ease}
+body.play #stage{bottom:calc(8px + env(safe-area-inset-bottom))}
+body.end #stage{opacity:0;pointer-events:none}
+#mSvg{display:block;width:100%;height:100%;touch-action:none;overflow:visible}
+.hit{fill:transparent;cursor:pointer}
+body:not(.play) .hit{pointer-events:none}
+#tick{font-family:var(--dot);font-size:14px;fill:var(--amber);letter-spacing:.06em}
+#plateT{font-family:var(--plate);font-size:21px;fill:#f3e7c9;letter-spacing:.08em}
+#tapeT{font-family:var(--hand);font-size:13px;fill:#2b2219}
+.dial{font-family:var(--dot);font-size:11px;fill:#3a2d22}
+.lamp{fill:#3c2f22;stroke:#1a130d;stroke-width:1}
+.lamp.on{fill:#ffcf5a}
+#mach.dim .lamp.on{fill:#7a5f2a}
+#mach.dim #tick{opacity:.35}
+.glowPart{animation:gp .5s ease-in-out infinite alternate}
+@keyframes gp{from{opacity:.25}to{opacity:.95}}
+
+/* タイトルの名前札（ダイモテープ） */
+#tPanel{position:fixed;left:0;right:0;bottom:0;height:40svh;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:8px 16px calc(14px + env(safe-area-inset-bottom))}
+body.play #tPanel,body.end #tPanel{display:none}
+#tTitle{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#tLab{font-family:var(--hand);font-size:17px;color:#ffcf5a;transform:rotate(-2deg);margin-bottom:-4px}
+.names{display:flex;align-items:center;gap:8px;width:min(100%,380px)}
+.names input{flex:1;min-width:0;height:46px;border:0;border-radius:3px;padding:0 10px;background:#b3261e;color:#fff;font-weight:800;font-size:17px;letter-spacing:.08em;text-align:center;text-shadow:0 -1px 0 rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.25);box-shadow:inset 0 2px 0 rgba(255,255,255,.18),inset 0 -2px 0 rgba(0,0,0,.25),0 3px 6px rgba(0,0,0,.35);outline:none}
+.names input:nth-of-type(2){background:#1d4f8f}
+.names input::placeholder{color:rgba(255,255,255,.88)}
+.names input:focus{box-shadow:inset 0 2px 0 rgba(255,255,255,.18),0 0 0 3px #ffcf5a}
+.names b{font-family:var(--plate);font-size:22px;color:var(--brass);flex:none}
+#nameMsg{font-size:13px;color:#ffcf5a;min-height:18px}
+#bStart{display:flex;align-items:center;gap:12px;min-height:58px;padding:0 22px 0 16px;border-radius:8px;background:linear-gradient(#4b4a46,#2d2c29);border:1px solid #6b6962;box-shadow:0 5px 0 #151412,0 10px 20px rgba(0,0,0,.4);font-weight:800;font-size:18px;color:#f3e7c9}
+#bStart:active{transform:translateY(3px);box-shadow:0 2px 0 #151412}
+#bStart i{display:block;width:8px;height:34px;border-radius:4px;background:#0c0b0a;box-shadow:inset 0 0 0 2px #7a776e}
+.tLinks{display:flex;gap:16px}
+.tLinks button{min-height:42px;padding:0 10px;font-size:15px;color:#e8dcc0;font-family:var(--hand)}
+
+/* 遊びの指ガイド */
+#tut{position:fixed;z-index:20;pointer-events:none;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-10%)}
+#tut svg{width:46px;height:46px;animation:tap .8s ease-in-out infinite}
+#tut.swipe svg{animation:swipe .7s ease-in-out infinite alternate}
+#tut.pull svg{animation:pull .9s ease-in infinite}
+#tut span{margin-top:2px;background:#ffcf5a;color:#2b2219;font-family:var(--hand);font-size:16px;padding:1px 9px;border-radius:3px;white-space:nowrap;transform:rotate(-3deg);box-shadow:0 2px 4px rgba(0,0,0,.4)}
+@keyframes tap{0%,100%{transform:translateY(0)}50%{transform:translateY(8px) scale(.94)}}
+@keyframes swipe{from{transform:translateX(-26px) rotate(-10deg)}to{transform:translateX(26px) rotate(10deg)}}
+@keyframes pull{0%{transform:translateY(-10px)}80%{transform:translateY(22px)}100%{transform:translateY(22px);opacity:0}}
+#fanCur{position:fixed;z-index:19;width:70px;height:90px;pointer-events:none;transform:translate(-50%,-30%);transform-origin:50% 90%}
+
+/* 結果: 感熱紙のレシート */
+#vEnd{position:fixed;inset:0;z-index:8;display:flex;flex-direction:column;align-items:center;gap:8px;padding:calc(48px + env(safe-area-inset-top)) 16px calc(10px + env(safe-area-inset-bottom))}
+#rcBox{flex:1;min-height:0;width:100%;display:flex;justify-content:center;align-items:flex-start}
+#rc{display:block;max-width:100%;max-height:100%;width:auto;height:auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,.45));animation:rcIn .9s cubic-bezier(.2,.8,.3,1) both}
+@keyframes rcIn{from{transform:translateY(-40px) rotate(-3deg);opacity:0}to{transform:none;opacity:1}}
+.endBtns{display:flex;flex-direction:column;gap:6px;width:min(100%,380px);flex:none}
+.endBtns .row{display:flex;gap:6px}
+.endBtns button{flex:1;min-height:44px;border-radius:6px;font-size:15px;font-weight:700;background:rgba(15,20,18,.6);border:1px solid rgba(241,230,204,.35)}
+#bAgain{background:#e6dbc0;color:#2b2219;border:0;box-shadow:0 4px 0 #8c7f62}
+#affBox{display:flex;flex-direction:column;align-items:center;gap:3px;width:min(100%,380px);flex:none}
+#bAff{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;max-width:100%;padding:0 14px;border-radius:6px;border:1px solid rgba(241,230,204,.4);color:#f1e6cc;font-size:14px;font-weight:700;text-decoration:none;line-height:1.25}
+#bAff .pr{flex:none;font-size:13px;font-weight:700;border:1.5px solid #f1e6cc;border-radius:3px;padding:0 5px;line-height:1.45}
+#affNote{font-size:11px;color:#c9bd9f}
+#tmSupport{margin-top:0!important}
+
+/* 遊び方: 取扱説明書 */
+#how{position:fixed;inset:0;z-index:70;background:rgba(10,12,11,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+#howCard{width:min(100%,400px);max-height:100%;overflow:hidden;background:#f2ead6;color:#2b2219;border-radius:2px;padding:18px 18px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);transform:rotate(-.8deg);display:flex;flex-direction:column;gap:9px}
+#howCard h2{font-family:var(--plate);font-weight:400;font-size:20px;border-bottom:2px solid #2b2219;padding-bottom:4px}
+#howBody p{font-size:14px;line-height:1.6;margin-bottom:7px}
+#howBody b{background:linear-gradient(transparent 60%,#ffd77a 60%)}
+#howBody small{display:block;font-size:10.5px;line-height:1.45;color:#6a5d4b}
+#howBody a{color:#1d4f8f}
+#howClose{align-self:center;min-height:44px;min-width:140px;border-radius:6px;background:#2b2219;color:#f2ead6;font-weight:700}
+@media (max-height:700px){#tLab{font-size:15px}.names input{height:42px}#bStart{min-height:52px}#howBody p{font-size:13px;line-height:1.5;margin-bottom:5px}#tPanel{gap:8px}}
+</style>
+</head>
+<body>
+<div id="loading"><svg viewBox="0 0 70 120" aria-hidden="true"><rect x="22" y="96" width="26" height="18" rx="3" fill="#5a3a22"/><path d="M14 98V38a21 21 0 0 1 42 0v60z" fill="rgba(200,230,255,.12)" stroke="#9fb6bd" stroke-width="2"/><g id="fil"><path d="M27 92V48q8-14 16 0v44" fill="none" stroke="#ff9a2e" stroke-width="3"/><ellipse cx="35" cy="58" rx="16" ry="22" fill="#ff8a1e" opacity=".25"/></g></svg><p id="loadTxt">真空管あたため中</p><div id="loadBar"><i></i></div></div>
+<div id="bulb"></div>
+
+<div id="corner">
+  <button id="bLang" aria-label="language">EN</button>
+  <button id="bMute" aria-label="sound"><svg viewBox="0 0 24 24"><path d="M3 9h4l6-5v16l-6-5H3z"/><path id="icoWave" d="M15 8.5a5 5 0 0 1 0 7v-2.2a2.6 2.6 0 0 0 0-2.6zM17 5a9 9 0 0 1 0 14v-2.4a6.6 6.6 0 0 0 0-9.2z"/></svg></button>
+</div>
+
+<div id="stage">
+<svg id="mSvg" viewBox="0 0 360 580" preserveAspectRatio="xMidYMid meet" aria-label="machine">
+  <defs>
+    <linearGradient id="gEn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ece2c8"/><stop offset=".6" stop-color="#d9cca9"/><stop offset="1" stop-color="#bfae88"/></linearGradient>
+    <linearGradient id="gSide" x1="0" x2="1"><stop offset="0" stop-color="#8f8264"/><stop offset="1" stop-color="#ab9c7a"/></linearGradient>
+    <linearGradient id="gBrass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2c27a"/><stop offset=".5" stop-color="#b8913f"/><stop offset="1" stop-color="#7d5f22"/></linearGradient>
+    <linearGradient id="gBak" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6e4a2c"/><stop offset="1" stop-color="#3b2516"/></linearGradient>
+    <radialGradient id="gFace" cx=".5" cy=".9" r=".9"><stop offset="0" stop-color="#fff6dc"/><stop offset="1" stop-color="#e9d9b0"/></radialGradient>
+    <radialGradient id="gTube" cx=".5" cy=".6" r=".6"><stop offset="0" stop-color="#ffb24a" stop-opacity=".95"/><stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="gHot" cx=".5" cy=".55" r=".6"><stop offset="0" stop-color="#ff4a1a" stop-opacity=".55"/><stop offset="1" stop-color="#ff4a1a" stop-opacity="0"/></radialGradient>
+    <filter id="fBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter><filter id="fFire" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6"/></filter>
+    <pattern id="pVentP" width="10" height="9" patternUnits="userSpaceOnUse"><rect width="10" height="9" fill="#2a221b"/><rect y="2" width="10" height="4" rx="2" fill="#0d0a08"/></pattern>
+  </defs>
+
+  <!-- 壁のコンセント -->
+  <g id="socket"><rect x="6" y="514" width="34" height="46" rx="4" fill="#ddd3bb" stroke="#8a7f68"/><rect x="14" y="526" width="4" height="10" rx="1" fill="#2b2219"/><rect x="28" y="526" width="4" height="10" rx="1" fill="#2b2219"/></g>
+  <ellipse cx="176" cy="566" rx="140" ry="10" fill="rgba(0,0,0,.35)"/>
+
+  <g id="mach">
+    <!-- 脚 -->
+    <rect x="80" y="520" width="14" height="42" fill="#2b2219"/><rect x="252" y="520" width="14" height="42" fill="#2b2219"/>
+    <!-- コード -->
+    <path id="cord" d="M66 512 C 60 540, 56 548, 46 540" fill="none" stroke="#1a1410" stroke-width="5" stroke-linecap="round"/>
+    <!-- 横の板（叩く所） -->
+    <g id="side"><path d="M22 156 L62 144 L62 520 L22 506 Z" fill="url(#gSide)" stroke="#5f5440" stroke-width="1.5"/>
+      <path d="M30 230 q8 6 14 -2 M34 300 q6 8 16 0 M28 380 q10 4 18 -4" stroke="#6d6148" stroke-width="2" fill="none" opacity=".8"/>
+      <circle cx="42" cy="170" r="2.5" fill="#6d6148"/><circle cx="42" cy="490" r="2.5" fill="#6d6148"/>
+      <path id="sideDent" d="M30 330 q10 -6 20 4 q-6 10 -18 6z" fill="#6d6148" opacity="0"/>
+      <g id="hang"><path d="M42 392 v8" stroke="#2b2219" stroke-width="1.5"/><ellipse cx="42" cy="414" rx="13" ry="15" fill="#e8e0cc" stroke="#7a6d55"/><path d="M33 406 q9 -6 18 0 M32 414 h20 M33 422 q9 6 18 0" stroke="#d2603f" stroke-width="1.6" fill="none"/><rect x="40.5" y="428" width="3" height="18" fill="#7a5a36"/></g>
+    </g>
+    <!-- 本体 -->
+    <rect x="62" y="140" width="228" height="382" rx="10" fill="url(#gEn)" stroke="#6f6248" stroke-width="2"/>
+    <rect x="70" y="148" width="212" height="366" rx="7" fill="none" stroke="#b9a983" stroke-width="1.5"/>
+    <path d="M250 150 q8 4 4 14 q-8 -2 -4 -14z M78 480 q10 -4 14 6 q-8 6 -14 -6z M266 440 q6 0 6 8 q-6 2 -6 -8z" fill="#a0602f" opacity=".55"/>
+    <!-- 真空管のドーム -->
+    <g id="dome">
+      <rect x="92" y="126" width="168" height="16" rx="3" fill="url(#gBrass)"/>
+      <path d="M100 128 V84 a76 54 0 0 1 152 0 V128z" fill="rgba(190,225,235,.14)" stroke="#a9bcc0" stroke-width="2"/>
+      <g id="tubes"></g>
+      <path d="M116 70 q20 -26 50 -30" stroke="rgba(255,255,255,.45)" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </g>
+    <g id="tape" transform="rotate(8 234 104)"><rect x="196" y="94" width="78" height="20" fill="#f6f1e2" opacity=".96"/><rect x="190" y="92" width="12" height="24" fill="rgba(240,230,190,.7)"/><rect x="268" y="92" width="12" height="24" fill="rgba(240,230,190,.7)"/><text id="tapeT" x="235" y="108" text-anchor="middle">こわれてます</text></g>
+    <!-- 名板 -->
+    <g id="plate"><rect x="84" y="152" width="184" height="34" rx="4" fill="#8c2b1f" stroke="#4a140d" stroke-width="2"/><circle cx="92" cy="169" r="2.5" fill="url(#gBrass)"/><circle cx="260" cy="169" r="2.5" fill="url(#gBrass)"/><text id="plateT" x="176" y="177" text-anchor="middle">相性診断マシン</text></g>
+    <!-- 電光表示 -->
+    <rect x="92" y="202" width="168" height="24" rx="3" fill="#120d09" stroke="#3a2d22"/>
+    <clipPath id="cTick"><rect x="96" y="204" width="160" height="20"/></clipPath>
+    <g clip-path="url(#cTick)"><text id="tick" x="176" y="219" text-anchor="middle"></text></g>
+    <!-- メーター -->
+    <g id="meter">
+      <path d="M90 322 A86 86 0 0 1 262 322 Z" fill="url(#gBrass)"/>
+      <path d="M98 318 A78 78 0 0 1 254 318 Z" fill="url(#gFace)"/>
+      <g id="scale"></g>
+      <path id="redZone" fill="#c0392b" opacity=".85"/>
+      <text class="dial" id="dialNg" x="0" y="0" fill="#a3301f"></text>
+      <g id="needle"><path d="M176 318 L174 252 L176 246 L178 252 Z" fill="#1a130d"/><circle cx="176" cy="318" r="7" fill="url(#gBak)"/></g>
+      <path id="crack" d="M150 262 l10 14 l-6 10 l14 8 M160 276 l12 -6 l6 -14 M170 294 l-14 10" stroke="#555" stroke-width="1.2" fill="none" opacity="0"/>
+      <path d="M110 290 a70 70 0 0 1 50 -38" stroke="rgba(255,255,255,.55)" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <rect id="meterFlash" x="98" y="240" width="156" height="78" fill="#ff3b1f" opacity="0" style="mix-blend-mode:multiply"/>
+    </g>
+    <!-- レバーのタイミング窓 -->
+    <g id="tWin"><rect x="266" y="238" width="16" height="96" rx="3" fill="#120d09" stroke="#3a2d22"/><rect id="tGreen" x="268" y="270" width="12" height="22" fill="#2f8f4a" opacity=".35"/><rect id="tDot" x="268" y="240" width="12" height="7" rx="2" fill="#ffcf5a" opacity=".25"/></g>
+    <!-- 温度計 -->
+    <g id="thermo"><rect x="78" y="346" width="16" height="92" rx="8" fill="#f2ecdc" stroke="#7a6d55"/><circle cx="86" cy="440" r="9" fill="#c0392b" stroke="#7a6d55"/><rect id="thermoCol" x="83" y="380" width="6" height="60" rx="3" fill="#c0392b"/><path d="M95 360 h4 M95 380 h4 M95 400 h4 M95 420 h4" stroke="#7a6d55"/></g>
+    <!-- 通気口 -->
+    <rect id="vent" x="108" y="346" width="150" height="80" rx="6" fill="url(#pVentP)" stroke="#3a2d22" stroke-width="2"/>
+    <rect id="hotGlow" x="100" y="330" width="166" height="110" fill="url(#gHot)" opacity="0"/>
+    <!-- 進み具合のランプ -->
+    <g id="lamps"></g>
+    <!-- レシートの口 -->
+    <rect x="124" y="470" width="104" height="10" rx="2" fill="#0c0906"/>
+    <g id="paperOut"><rect id="paper" x="130" y="476" width="92" height="0" fill="#fbf8ee"/></g>
+    <!-- 硬貨の口 -->
+    <g id="coin"><rect x="240" y="462" width="28" height="30" rx="3" fill="url(#gBrass)" stroke="#5c4418"/><rect x="252" y="467" width="4" height="16" rx="2" fill="#0c0906"/><text x="254" y="490" text-anchor="middle" style="font:700 6px var(--sans);fill:#3a2a0c">100</text></g>
+    <!-- 台 -->
+    <rect x="56" y="502" width="240" height="22" rx="3" fill="url(#gBak)"/>
+    <!-- レバー -->
+    <rect x="286" y="326" width="18" height="30" rx="3" fill="url(#gBrass)" stroke="#5c4418"/>
+    <g id="lever"><rect x="292" y="270" width="8" height="72" rx="3" fill="#8d8a82" stroke="#4a4842"/><circle cx="296" cy="266" r="12" fill="#a3301f" stroke="#4a140d" stroke-width="2"/><circle cx="292" cy="262" r="3.5" fill="rgba(255,255,255,.5)"/></g>
+    <circle id="leverLamp" cx="296" cy="372" r="5" fill="#3c2f22" stroke="#1a130d"/>
+    <rect id="hotTint" x="62" y="140" width="228" height="382" rx="10" fill="#ff3b1f" opacity="0" style="mix-blend-mode:multiply" pointer-events="none"/>
+  </g>
+  <!-- 差しこみ（ゆるむと手前に抜けてくる） -->
+  <g id="plug"><rect x="16" y="528" width="16" height="12" fill="#c9c3b5"/><rect id="plugBody" x="12" y="534" width="26" height="22" rx="4" fill="#2f2a25" stroke="#111"/><rect x="18" y="538" width="14" height="2" fill="#4c443c"/></g>
+  <g id="fx" pointer-events="none"></g>
+  <!-- 押せる所（見た目と別に大きめに取る） -->
+  <path id="hSide" class="hit" data-part="side" d="M8 150 L66 136 L66 500 L8 500 Z"/>
+  <rect id="hVent" class="hit" data-part="vent" x="100" y="336" width="166" height="100"/>
+  <rect id="hLever" class="hit" data-part="lever" x="272" y="236" width="70" height="132"/>
+  <circle id="hPlug" class="hit" data-part="plug" cx="32" cy="542" r="30"/>
+</svg>
+</div>
+
+<section id="tPanel">
+  <h1 id="tTitle"></h1>
+  <p id="tLab"></p>
+  <div class="names"><input id="nA" maxlength="12" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="next"><b>×</b><input id="nB" maxlength="12" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go"></div>
+  <p id="nameMsg"></p>
+  <button id="bStart"><i></i><span id="startTxt"></span></button>
+  <div class="tLinks"><button id="bRand"></button><button id="bHow"></button></div>
+</section>
+
+<div id="tut" hidden><svg viewBox="0 0 44 44" aria-hidden="true"><path d="M14 40c-3-5-7-10-7-13 0-2 2-3 4-1l4 4V8a3 3 0 0 1 6 0v12l2-1a3 3 0 0 1 5 1l1 1a3 3 0 0 1 4 2l1 1a3 3 0 0 1 4 3v6c0 4-2 7-4 9z" fill="#fff" stroke="#2b2219" stroke-width="2" stroke-linejoin="round"/></svg><span id="tutTxt"></span></div>
+<svg id="fanCur" viewBox="0 0 70 90" hidden aria-hidden="true"><ellipse cx="35" cy="32" rx="30" ry="30" fill="#efe7d3" stroke="#7a6d55" stroke-width="2"/><path d="M12 22 q23 -14 46 0 M8 34 h54 M12 46 q23 14 46 0" stroke="#d2603f" stroke-width="3" fill="none"/><rect x="32" y="60" width="6" height="28" rx="2" fill="#7a5a36"/></svg>
+
+<main id="vEnd" hidden>
+  <div id="rcBox"><canvas id="rc" width="600" height="980"></canvas></div>
+  <div class="endBtns">
+    <div class="row"><button id="bSave"></button><button id="bPost"></button></div>
+    <div class="row"><button id="bAgain"></button></div>
+  </div>
+  <div id="affBox" hidden><a id="bAff" target="_blank" rel="sponsored noopener"><span class="pr">PR</span><span id="affTxt"></span></a><small id="affNote"></small></div>
+</main>
+
+<div id="how" hidden><div id="howCard"><h2 id="howH"></h2><div id="howBody"></div><button id="howClose"></button></div></div>
+
+<script>
+(function(){
+  var opt={passive:false};
+  ['gesturestart','gesturechange','gestureend'].forEach(function(n){document.addEventListener(n,function(e){e.preventDefault()},opt)});
+  document.addEventListener('touchmove',function(e){if(e.touches&&e.touches.length>1)e.preventDefault()},opt);
+  var last=0;document.addEventListener('touchend',function(e){var n=Date.now();if(n-last<300&&!(e.target.closest&&e.target.closest('button,a,input')))e.preventDefault();last=n},opt);
+  document.addEventListener('dblclick',function(e){e.preventDefault()},opt);
+  window.addEventListener('wheel',function(e){if(e.ctrlKey)e.preventDefault()},opt);
+  window.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&['+','-','=','0',';'].indexOf(e.key)>=0)e.preventDefault()});
+})();
+(function(){
+  var errs=[];
+  window.addEventListener('error',function(e){errs.push((e.message||'error')+' @'+(e.filename||'')+':'+(e.lineno||''))});
+  window.addEventListener('unhandledrejection',function(e){errs.push('reject: '+(e.reason&&e.reason.message||e.reason))});
+  // 読み込み中を失敗と出さない: JS が動いたか（__jsUp）で見る
+  setTimeout(function(){
+    if(window.__jsUp) return;
+    var l=document.getElementById('loading');if(l)l.style.display='none';
+    var d=document.createElement('div');d.style.cssText='position:fixed;inset:auto 8px 8px 8px;z-index:199;background:#fff;color:#b00;font:12px/1.4 monospace;white-space:pre-wrap;padding:10px';
+    d.textContent='起動できませんでした / failed to start\n'+(errs.join('\n')||'(no error captured)')+'\n'+navigator.userAgent;
+    document.body.appendChild(d);
+  },15000);
+})();
+</script>
+<script src="tm.js?v=1" data-game="aisho-machine"></script>
+<script src="sfx.js?v=1"></script>
+<script src="config.js?v=1"></script>
+<script src="data.js?v=1"></script>
+<script src="game.js?v=1"></script>
+<script src="support.js?v=1" data-ja="缶コーヒー" data-en="a can of coffee"></script>
+</body>
+</html>
